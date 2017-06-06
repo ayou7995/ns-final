@@ -146,7 +146,7 @@ class percolation:
 
     
 if __name__ == "__main__" :
-    G = nx.read_edgelist(sys.argv[1])
+    read_edgelist
     t0 = time.time() 
     u_list = G.nodes()
     np.random.shuffle(u_list)
@@ -162,7 +162,7 @@ if __name__ == "__main__" :
     plt.figure(figsize=(12,9)) 
     plt.plot(np.linspace(0,1,len(before)), before/G.number_of_nodes(), label='before')
     k_list = [2,3,4,5]
-    #a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.016]
+    a_list = [0.005, 0.01, 0.02, 0.04, 0.08]
     for k in k_list:
         print(k)
         S = Split(G, 0.01, k)
@@ -176,6 +176,6 @@ if __name__ == "__main__" :
 
     plt.xlabel("Vertices remaining")
     plt.ylabel("Size of giant component")
-    plt.legend(loc="upper left")
-    plt.savefig('percolation3.png') 
+    plt.legend(loc="lower right")
+    plt.savefig('percolation1.png') 
     plt.clf()
