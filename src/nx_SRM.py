@@ -78,17 +78,17 @@ class Split:
             H = self.build_star(node)
         if self.topology == 'tree':
             H = self.build_tree(node)
-        count  = 0
+        origins = list(filter(lambda n : n.find('-')  == -1,neighbors))
+        spilteds = sorted(list(filter(lambda n : n.find('-') != -1,neighbors)))
         for i in range(self.k):
-            s = int(len(neighbors)*i/self.k)
-            e = int((len(neighbors)*(i+1)/self.k))
-            sub = neighbors[s:e]
+            s = int(len(origins)*i/self.k)
+            e = int((len(origins)*(i+1)/self.k))
+            sub = origins[s:e]
             for j in range (self.m):
-
                 for n in sub :
-                    
-                    count += 1
                     self.G.add_edge(H.nodes()[ (i + j) % self.k], n)
+        for i in range (len(spilteds)):
+            self.G.add_edge(H.nodes()[i % self.k], spilteds[i])
         self.G.remove_node(node)
         self.G = nx.compose(self.G ,H) 
 
@@ -140,7 +140,7 @@ if __name__ == "__main__" :
 
 
     G = nx.read_gml(sys.argv[1])
-    print(G.number_of_edges())
+    print('load data')
     t0 = time.time() 
     u_list = G.nodes()
     np.random.shuffle(u_list)
@@ -161,25 +161,23 @@ if __name__ == "__main__" :
     # k_list = [2, 3, 4, 5 ,6]
     # a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]
     
-    m_list = [1, 2, 3, 4, 5]
+    m_list = [1, 2, 3, 4]
     # t_list = [ 'clique', 'ring', 'star','tree']
     for m in m_list:
         print(m)
-        S = Split(G, k = 5, alpha = 0.02, m = m)
+        S = Split(G, k = 4, alpha = 0.02, m = m)
 
         H = S.run()
-        print(H.number_of_edges())
-        print(G.number_of_edges())
-        # nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format('c' , 5, 0.02, 'd', m))
-        # print('Spit')
-        # # u_list = H.nodes()
-        # d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-        # d_list = list(map(lambda v : v[0], d_list))
-        # model = percolation(H, d_list)
-        # after = model.run()
-        # after = np.array(model.hist)
-        # print('Percolation')
-        # np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format('c' , 5, 0.02, 'd', m), after)
+        nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format('c' , 4, 0.02, 'd', m))
+        print('Split')
+        # u_list = H.nodes()
+        d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+        d_list = list(map(lambda v : v[0], d_list))
+        model = percolation(H, d_list)
+        after = model.run()
+        after = np.array(model.hist)
+        print('Percolation')
+        np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format('c' , 4, 0.02, 'd', m), after)
         # plt.plot(np.linspace(0,1,len(after)), after/H.number_of_nodes(), label='alpha = ' + str(k))
 
     # plt.xlabel("Vertices remaining")
