@@ -15,15 +15,26 @@ I = 1
 
 
 
+def load_data():
+    f = open(sys.argv[2], 'r')
+    n_list = []
+    for line in f:
+        line = line.split(' ')
+        n_list.append([line[1],float(line[3][:-1])])
+    n_list = sorted(n_list, key=lambda tup: tup[1], reverse=True)
+
+    # n_list = list(map(lambda n : n[0], n_list))
+
+    return n_list
 
 class Split:
-    def __init__(self, G, k, alpha, m = 1, topology = 'clique'):
+    def __init__(self, G, k = 3 , alpha = 0.02 , m = 1, topology = 'clique', n_list =[]):
         self.G = G.copy()
         self.alpha = alpha
         self.k = k
         self.m = m
         self.topology = topology
-        self.n_list = sorted(G.degree().items(), key=operator.itemgetter(1), reverse=True)
+        self.n_list = n_list
 
     def build_clique(self, node):
         H = nx.Graph()
@@ -138,15 +149,15 @@ class percolation:
     
 if __name__ == "__main__" :
 
-
     G = nx.read_gml(sys.argv[1])
-    print('load data')
-    t0 = time.time() 
-    u_list = G.nodes()
-    np.random.shuffle(u_list)
+    n_list = load_data()
+    print ('load data')
+    # t0 = time.time() 
+    # u_list = G.nodes()
+    # np.random.shuffle(u_list)
 
-    d_list = sorted(G.degree().items(), key=operator.itemgetter(1))
-    d_list = list(map(lambda v : v[0], d_list))
+    # d_list = sorted(G.degree().items(), key=operator.itemgetter(1))
+    # d_list = list(map(lambda v : v[0], d_list))
 
     # model = percolation(G, d_list)
     # model.run()
@@ -161,23 +172,27 @@ if __name__ == "__main__" :
     # k_list = [2, 3, 4, 5 ,6]
     # a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]
     
-    m_list = [1, 2, 3, 4]
+    # m_list = [1, 2, 3, 4]
+    k = 3
+    alpha = 0.02
+    m = 1
     # t_list = [ 'clique', 'ring', 'star','tree']
-    for m in m_list:
-        print(m)
-        S = Split(G, k = 4, alpha = 0.02, m = m)
+    # for m in m_list:
+    #     print(m)
 
-        H = S.run()
-        nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format('c' , 4, 0.02, 'd', m))
-        print('Split')
-        # u_list = H.nodes()
-        d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-        d_list = list(map(lambda v : v[0], d_list))
-        model = percolation(H, d_list)
-        after = model.run()
-        after = np.array(model.hist)
-        print('Percolation')
-        np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format('c' , 4, 0.02, 'd', m), after)
+    S = Split(G, k = k, alpha = alpha, m = m, n_list = n_list)
+
+    H = S.run()
+    nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format('c' , k, alpha, 'c', m))
+    print('Split')
+    # u_list = H.nodes()
+    d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+    d_list = list(map(lambda v : v[0], d_list))
+    model = percolation(H, d_list)
+    after = model.run()
+    after = np.array(model.hist)
+    print('Percolation')
+    np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format('c' , k, alpha, 'c', m), after)
         # plt.plot(np.linspace(0,1,len(after)), after/H.number_of_nodes(), label='alpha = ' + str(k))
 
     # plt.xlabel("Vertices remaining")
