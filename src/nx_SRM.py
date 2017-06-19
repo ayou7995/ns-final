@@ -232,53 +232,54 @@ class percolation:
 if __name__ == "__main__" :
 
     G = nx.read_gml(sys.argv[1])
-    v_list = load_data()
+
+    u_list = G.nodes()
+    np.random.shuffle(u_list)
+    model = percolation(G, u_list)
+    model.run()
+    uniform = np.asarray(model.hist)
+    print('unoform')
+
+
+    d_list = sorted(G.degree().items(), key=operator.itemgetter(1))
+    d_list = list(map(lambda v : v[0], d_list))
+    model = percolation(G, d_list)
+    model.run()
+    degree = np.asarray(model.hist)
+    print('degree')
+
+   
+
+    plt.plot(np.linspace(0,1,len(uniform)), uniform/len(uniform), label='uniform')
+    plt.plot(np.linspace(0,1,len(degree)), degree/len(degree), label='degree')
+    plt.xlabel("Vertices remaining")
+    plt.ylabel("Size of giant component")
+    plt.legend(loc="upper left")
+    plt.savefig('percolation.png') 
+    plt.clf()
     print ('load data')
 
-    print(G.number_of_nodes())
+    # print(G.number_of_nodes())
 
-    S = Split_d(G)
+    # S = Split_d(G)
 
-    cost = 8
-    m_list = [16]
-    for m in m_list:
-        d = S.optimal_d(m, cost)
-        t = 'clique'
-        print('m:{0}, c:{1} ,d:{2}'.format(m,cost,d))
-        S2 =  Split_d(G, d = d, m = m )
-        H = S2.run()
-        nx.write_gml(H, "../nonuniform/network/as06_T{0}_D{1}_M{2}_cost{3}.gml".format(t[0], d, m, cost ))
-        print('Split')
-        d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-        d_list = list(map(lambda v : v[0], d_list))
-        model = percolation(H, d_list)
-        after = model.run()
-        after = np.array(model.hist)
-        print('Percolation')
-        np.save( "../nonuniform/procedure/as06_T{0}_D{1}_M{2}_cost{3}.npy".format(t[0], d, m, cost ),after)
-
-    # H = S.run()
-
-
-    # print(a)
-    # H, cost = S.run()
-    # print(cost)
-    # k_list = np.arange(8,9,2)
     # cost = 8
-    # for k in k_list:
-    #     for m in np.arange(1,k+1):
-    #         a = S.optimal_alpha(k,m, cost)
-    #         t = 'clique'
-    #         print("k : {0}, m : {1}, a : {2:.3f}, cost : {3}".format(k ,m, a, cost))
-    #         S2 = Split(G, k = k, alpha = a, m = m, topology = t, v_list = v_list)
-    #         H = S2.run()
-    #         nx.write_gml(H, "../optimize/network/as06_T{0}_K{1}_R{2:.3f}_C{3}_M{4}_cost{5}.gml".format(t[0], k, a, 'd', m, cost))
-    #         print('Split')
-    #         d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-    #         d_list = list(map(lambda v : v[0], d_list))
-    #         model = percolation(H, d_list)
-    #         after = model.run()
-    #         after = np.array(model.hist)
-    #         print('Percolation')
-    #         np.save( "../optimize/procedure/as06_T{0}_K{1}_R{2:.3f}_C{3}_M{4}_cost{5}.npy".format(t[0], k, a, 'd', m, cost), after)
+    # m_list = [16]
+    # for m in m_list:
+    #     d = S.optimal_d(m, cost)
+    #     t = 'clique'
+    #     print('m:{0}, c:{1} ,d:{2}'.format(m,cost,d))
+    #     S2 =  Split_d(G, d = d, m = m )
+    #     H = S2.run()
+    #     nx.write_gml(H, "../nonuniform/network/as06_T{0}_D{1}_M{2}_cost{3}.gml".format(t[0], d, m, cost ))
+    #     print('Split')
+    #     d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+    #     d_list = list(map(lambda v : v[0], d_list))
+    #     model = percolation(H, d_list)
+    #     after = model.run()
+    #     after = np.array(model.hist)
+    #     print('Percolation')
+    #     np.save( "../nonuniform/procedure/as06_T{0}_D{1}_M{2}_cost{3}.npy".format(t[0], d, m, cost ),after)
+
+
 
