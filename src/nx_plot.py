@@ -106,7 +106,7 @@ if __name__ == '__main__':
     origin_thres = threshold(origin, [0.5, 0.25, 0.1, 0.01, 0.001])
     print('origin_thres')
     print(origin_thres)
-    plot([], 'origin', 'origin')
+    plot([], 'origin', 'as06_origin')
 
     paths = [p for p in glob.glob(join(proDir,'*.npy')) if 'origin' not in p]
     objlist = parse(paths)
