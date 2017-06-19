@@ -9,6 +9,7 @@ import random
 import operator
 import numpy as np
 import itertools
+from functools import reduce
 S = 0
 I = 1
 
@@ -28,25 +29,52 @@ def load_data():
     return n_list
 
 class Split:
-    def __init__(self, G, k = 3 , alpha = 0.02 , m = 1, topology = 'clique', n_list =[]):
+    def __init__(self, G, k = 3 , alpha = 0.02 , m = 1, topology = 'clique', v_list =[]):
         self.G = G.copy()
         self.alpha = alpha
         self.k = k
         self.m = m
         self.topology = topology
-        self.n_list = n_list
+        self.v_list = v_list
+    
 
-    def build_clique(self, node):
+    def loss_function(self, K, M, alpha):
+        length = int(alpha*len(self.v_list))
+        core = self.v_list[:length]
+        V = len(core) * (K-1)
+        Es = len(core) * K * (K-1) / 2
+        Er = 0
+        for n in core :
+            Er += len(self.G.neighbors(n[0])) * (M-1)
+        E =  Es + Er
+        #suppose loss = [0,1]
+        loss = w1 * V + w2 * E
+        return loss
+    
+    def optimal_alpha(self, K, M, thres ):
+        
+        count = 1
+        alpha = 0.16
+        cost = self.loss_function(K, M, alpha )
+        while abs(cost - thres) > 0.01:
+            alpha -= np.sign(cost - thres) * np.power(0.5,count) * alpha 
+            count += 1
+            cost = self.loss_function(K, M, alpha )
+        return alpha
+
+         
+         
+    def build_clique(self, node, k):
         H = nx.Graph()
-        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(self.k)))
+        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(k)))
         e_list = list(itertools.combinations(n_list, 2))
         for item in e_list:
             H.add_edge(str(item[0]), str(item[1]))
         return H
 
-    def build_ring(self, node):
+    def build_ring(self, node, k):
         H = nx.Graph()
-        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(self.k)))
+        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(k)))
         e_list = []
         for i in range(len(n_list)):
             e_list.append([n_list[i-1], n_list[i]])
@@ -54,9 +82,9 @@ class Split:
             H.add_edge(str(item[0]), str(item[1]))
         return H
 
-    def build_star(self, node):
+    def build_star(self, node, k):
         H = nx.Graph()
-        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(self.k)))
+        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(k)))
         e_list = []
         for i in range(len(n_list)-1):
             e_list.append([n_list[0], n_list[i+1]])
@@ -64,9 +92,9 @@ class Split:
             H.add_edge(str(item[0]), str(item[1]))
         return H
 
-    def build_tree(self, node):
+    def build_tree(self, node, k):
         H = nx.Graph()
-        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(self.k)))
+        n_list = list(map(lambda i: node + '-' + str(i),  np.arange(k)))
         e_list = []
         for i in range(1,len(n_list)):
             if i % 2 != 0 : 
@@ -77,39 +105,49 @@ class Split:
             H.add_edge(str(item[0]), str(item[1]))
         return H
 
-    def join_graph(self, node):
+    def join_graph(self, node, k , m):
         neighbors = self.G.neighbors(node)
-        if len(neighbors) < self.k:
+        if len(neighbors) < k:
             return
         if self.topology == 'clique':
-            H = self.build_clique(node)
+            H = self.build_clique(node, k)
         if self.topology == 'ring':
-            H = self.build_ring(node)
+            H = self.build_ring(node, k)
         if self.topology == 'star':
-            H = self.build_star(node)
+            H = self.build_star(node, k)
         if self.topology == 'tree':
-            H = self.build_tree(node)
+            H = self.build_tree(node, k)
         origins = list(filter(lambda n : n.find('-')  == -1,neighbors))
         spilteds = sorted(list(filter(lambda n : n.find('-') != -1,neighbors)))
-        for i in range(self.k):
-            s = int(len(origins)*i/self.k)
-            e = int((len(origins)*(i+1)/self.k))
+        for i in range(k):
+            s = int(len(origins)*i/k)
+            e = int((len(origins)*(i+1)/k))
             sub = origins[s:e]
-            for j in range (self.m):
+            for j in range (m):
                 for n in sub :
-                    self.G.add_edge(H.nodes()[ (i + j) % self.k], n)
+                    self.G.add_edge(H.nodes()[ (i + j) % k], n)
         for i in range (len(spilteds)):
-            self.G.add_edge(H.nodes()[i % self.k], spilteds[i])
+            self.G.add_edge(H.nodes()[i % k], spilteds[i])
         self.G.remove_node(node)
         self.G = nx.compose(self.G ,H) 
 
+    def nouniform(self, thres):
+        d_list = list(sorted(self.G.degree().items(), key=operator.itemgetter(1), reverse = True ))
+
+        core = list(filter(lambda n : n[1] >= thres , d_list)) 
+        print(core)
+        for n in core : 
+            self.join_graph(n[0], int(len(self.G.neighbors(n[0]))/thres) +1 ,1)
+        return self.G
+
+
     def run(self):
-        length = int(self.alpha*len(self.n_list))
-        core = self.n_list[:length]
+        length = int(self.alpha*len(self.v_list))
+        core = self.v_list[:length]
         if self.k < self.m :
             raise ValueError('The replica = {0} most smaller than spilt = {1}'.format(self.m, self.k))
         for n in core:
-            self.join_graph(n[0])
+            self.join_graph(n[0], self.k , self.m)
         return self.G
         
 
@@ -150,7 +188,7 @@ class percolation:
 if __name__ == "__main__" :
 
     G = nx.read_gml(sys.argv[1])
-    n_list = load_data()
+    v_list = load_data()
     print ('load data')
     # t0 = time.time() 
     # u_list = G.nodes()
@@ -169,30 +207,37 @@ if __name__ == "__main__" :
 
     # plt.figure(figsize=(12,9)) 
     # plt.plot(np.linspace(0,1,len(before)), before/G.number_of_nodes(), label='before')
-    # k_list = [2, 3, 4, 5 ,6]
-    # a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]
     
+    k_list = [2, 3, 4, 5 ,6]
+    a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]
+    
+    S = Split(G, v_list = v_list)
+    H = S.nouniform(300)
+    print(G.number_of_nodes())
+    print(H.number_of_nodes())
+
     # m_list = [1, 2, 3, 4]
-    k = 3
-    alpha = 0.02
-    m = 1
+    # k = 3
+    # alpha = 0.02
+    # m = 1
     # t_list = [ 'clique', 'ring', 'star','tree']
-    # for m in m_list:
-    #     print(m)
-
-    S = Split(G, k = k, alpha = alpha, m = m, n_list = n_list)
-
-    H = S.run()
-    nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format('c' , k, alpha, 'c', m))
-    print('Split')
-    # u_list = H.nodes()
-    d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-    d_list = list(map(lambda v : v[0], d_list))
-    model = percolation(H, d_list)
-    after = model.run()
-    after = np.array(model.hist)
-    print('Percolation')
-    np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format('c' , k, alpha, 'c', m), after)
+    # for k in k_list:
+    #     for a in a_list:
+    #         for t in t_list :
+    #             for m in np.arange(1,k+1):
+    #                 print("as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format(t[0], k, a, 'd', m))
+    #                 S = Split(G, k = k, alpha = a, m = m, topology = t, v_list = v_list)
+    #                 H = S.run()
+    #                 nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format(t[0], k, a, 'd', m))
+    #                 print('Split')
+    #                 # u_list = H.nodes()
+    #                 d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+    #                 d_list = list(map(lambda v : v[0], d_list))
+    #                 model = percolation(H, d_list)
+    #                 after = model.run()
+    #                 after = np.array(model.hist)
+    #                 print('Percolation')
+    #                 np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format(t[0], k, a, 'd', m), after)
         # plt.plot(np.linspace(0,1,len(after)), after/H.number_of_nodes(), label='alpha = ' + str(k))
 
     # plt.xlabel("Vertices remaining")
