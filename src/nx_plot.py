@@ -202,11 +202,11 @@ if __name__ == '__main__':
     # data = sorted(sifter('basic',basiclist), key=lambda obj: (obj['K'],obj['M']))
     # plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_Kx_R0.02_Cd_My.png', 4/5)
     ########################################################################################
-    # BASIC (R) : as06_Tc_Ky_Rx_Cd_M1 *****
-    for i in [2,3,4,5,6]:
-        setBasicFilter(['as06'],['c'],[i],[0.005, 0.01, 0.02, 0.04, 0.08, 0.16],['d'],[1])
-        data = sorted(sifter('basic',basiclist), key=lambda obj: obj['R'])
-        plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_K{0}_Rx_Cd_M1.png'.format(i), 4/5)
+    # BASIC (R) : as06_Tc_Ky_Rx_Cd_M1
+    # for i in [2,3,4,5,6]:
+        # setBasicFilter(['as06'],['c'],[i],[0.005, 0.01, 0.02, 0.04, 0.08, 0.16],['d'],[1])
+        # data = sorted(sifter('basic',basiclist), key=lambda obj: obj['R'])
+        # plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_K{0}_Rx_Cd_M1.png'.format(i), 4/5)
     ########################################################################################
     # BASIC (Centrality) : as06_Tc_Ky_R0.02_Cx_M1
     # for i in range(2,7):
@@ -252,12 +252,12 @@ if __name__ == '__main__':
              # 'as06_Tc_D^_Mx_cost{0}.png'.format(i), 5/10)
     ########################################################################################
     # COMPARISON BETWEEN TOP 3 OF OPTIMIZE AND NONUNIFORM
-    # for i in [1,2,4,8]:
-        # setOptimizeFilter(['as06'],['c'],[2,4,6,8],['d'],list(range(1,9)), [i])
-        # data1 = sorted(sifter('optimize',optimizelist), key=lambda obj: obj['thres'][1])
-        # setNonuniformFilter(['as06'],['c'],[1,2,4,8,16,32],[i])
-        # data2 = sorted(sifter('nonuniform',nonunilist), key=lambda obj: obj['thres'][1])
-        # data = data1[-3:] + data2[-3:]
-        # plot('total', data, 'as06 - total (cost = {0})'.format(i), 
-             # 'as06_total_top3_cost{0}.png'.format(i), 5/10)
+    for i in [1,2,4,8]:
+        setOptimizeFilter(['as06'],['c'],[2,4,6,8],['d'],list(range(1,9)), [i])
+        data1 = sorted(sifter('optimize',optimizelist), key=lambda obj: obj['thres'][2])
+        setNonuniformFilter(['as06'],['c'],[1,2,4,8,16,32],[i])
+        data2 = sorted(sifter('nonuniform',nonunilist), key=lambda obj: obj['thres'][2])
+        data = data1[-3:] + data2[-3:]
+        plot('total', data, 'as06 - total (cost = {0})'.format(i), 
+             'as06_total_top3_cost{0}.png'.format(i), 5/10)
     
