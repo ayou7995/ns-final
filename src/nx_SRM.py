@@ -143,7 +143,6 @@ class Split:
         core = self.v_list[:length]
 
         cost = self.loss_function( self.k, self.m, self.alpha)
-        print(cost)
         if self.k < self.m :
             raise ValueError('The replica = {0} most smaller than spilt = {1}'.format(self.m, self.k))
         for n in core:
@@ -232,32 +231,25 @@ class percolation:
 if __name__ == "__main__" :
 
     G = nx.read_gml(sys.argv[1])
-
-    u_list = G.nodes()
-    np.random.shuffle(u_list)
-    model = percolation(G, u_list)
-    model.run()
-    uniform = np.asarray(model.hist)
-    print('unoform')
-
-
-    d_list = sorted(G.degree().items(), key=operator.itemgetter(1))
-    d_list = list(map(lambda v : v[0], d_list))
-    model = percolation(G, d_list)
-    model.run()
-    degree = np.asarray(model.hist)
-    print('degree')
-
-   
-
-    plt.plot(np.linspace(0,1,len(uniform)), uniform/len(uniform), label='uniform')
-    plt.plot(np.linspace(0,1,len(degree)), degree/len(degree), label='degree')
-    plt.xlabel("Vertices remaining")
-    plt.ylabel("Size of giant component")
-    plt.legend(loc="upper left")
-    plt.savefig('percolation.png') 
-    plt.clf()
-    print ('load data')
+    v_list = load_data()
+    k = 6
+    a_list = [0.005, 0.01, 0.02, 0.04, 0.08]
+    for a in a_list:
+       
+        t = 'clique'
+        m = 1
+        print("T{0}_K{1}_R{2}_C_{3}_M{4}.gml".format(t[0], k, a,'d',m ))
+        S = Split(G, k = k, alpha = a, topology = t,  m = 1, v_list = v_list )  
+        H = S.run()  
+        nx.write_gml(H, "../basic/network/as06_T{0}_K{1}_R{2}_C_{3}_M{4}.gml".format(t[0], k, a,'d',m ))        
+        print('spilt')
+        d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+        d_list = list(map(lambda v : v[0], d_list))
+        model = percolation(H, d_list)
+        after = model.run()
+        after = np.array(model.hist)
+        np.save( "../basic/network/as06_T{0}_K{1}_R{2}_C_{3}_M{4}.npy".format(t[0], k, a,'d',m ), after)        
+        print('Percolation')
 
     # print(G.number_of_nodes())
 

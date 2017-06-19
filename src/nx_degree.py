@@ -11,7 +11,7 @@ if __name__ == "__main__" :
     for f in f_list :
         G=nx.read_gml(f) 
 
-        filepath = '../figure/distribution/' + f.split('/')[1] + '/' + f.split('/')[-1][:-4]+'_log.png'
+        filepath = '../figure/distribution/' + f.split('/')[1] + '/' + f.split('/')[-1][:-4]+'.png'
         print( f.split('/')[-1][:-3])
         degree = list(G.degree().values())
         d_list = []
@@ -21,3 +21,4 @@ if __name__ == "__main__" :
         plt.scatter(d_list[:,0],d_list[:,1], s=20, c = 'b')
         plt.savefig(filepath)
         plt.clf()
+    

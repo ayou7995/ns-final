@@ -37,9 +37,9 @@ def plot(types, objs, title, filename, topSize=3/5, includeOrigin=True):
     plt.figure()
     for i in range(len(objs)):
         _hist = objs[i]['hist'] / objs[i]['hist'].size 
-        indexlist = [np.where(_hist==size)[0][-1] for size in objs[i]['thres']]
-        indexlist = [-(_hist.size-idx) for idx in indexlist]
-        _hist = _hist[int(_hist.size*topSize):] 
+        # indexlist = objs[i]['thres'] - int(topSize * _hist.size)
+        # print(indexlist)
+        # _hist = _hist[int(_hist.size*topSize):] 
         if types == 'basic':
             label = 'T{0}_K{1}_R{2}_C{3}_M{4}'.format(
                 objs[i]['T'],objs[i]['K'],objs[i]['R'],objs[i]['C'],objs[i]['M'])
@@ -49,18 +49,19 @@ def plot(types, objs, title, filename, topSize=3/5, includeOrigin=True):
         elif types == 'nonuniform':
             label = 'T{0}_D{1}_M{2}_cost{3}'.format(
                 objs[i]['T'],objs[i]['D'],objs[i]['M'],objs[i]['cost'])
-        print(label, colors[i+1], objs[i]['thres'][2])
+    
         plt.plot(np.linspace(topSize,1,_hist.size), _hist, label=label,
-                 color=colors[i+1])#, marker=markers[i+1], markevery=indexlist)
+                 color=colors[i+1])
+    plt.plot([0.75,1],[0.25, 0.25], color='grey')
     if includeOrigin:
         label = 'origin'
         _origin = origin / origin.size
         _origin = _origin[int(_origin.size*topSize):]
         norm_origin = origin / origin.size
-        indexlist = [np.where(norm_origin==size)[0][-1] for size in origin_thres]
-        indexlist = [-(origin.size-idx) for idx in indexlist]
+        # indexlist = origin['thres'] - int(topSize * origin.size)
+        # print(indexlist)
         plt.plot(np.linspace(topSize,1,_origin.size), _origin, label=label,
-                 color=colors[0]) #, marker=markers[0], markevery=indexlist)
+                 color=colors[0])
     plt.title(title)
     plt.legend(loc='upper left')
     if types == 'basic':
@@ -140,11 +141,11 @@ def sifter(types, objlist):
 
 def threshold(hist, thres):
     j = 0
-    hist = hist / hist.size
+    hist = hist / hist.shape[0]
     temp = np.array([0. for i in range(len(thres))])
     for i in reversed(range(len(hist))):
         if hist[i] < thres[j]:
-            temp[j] = hist[i]
+            temp[j] = i /hist.shape[0]
             j+=1
             if j == len(thres):
                 break
@@ -164,7 +165,6 @@ if __name__ == '__main__':
     # optimizelist  
     paths = [p for p in glob.glob(join(optDir,'*.npy')) if 'origin' not in p]
     optimizelist = parse(paths, 'optimize')
-    
     # nonunilist  
     paths = [p for p in glob.glob(join(nonDir,'*.npy')) if 'origin' not in p]
     nonunilist = parse(paths, 'nonuniform')
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     for i in [1,2,4,8]:
         setOptimizeFilter(['as06'],['c'],[2,4,6,8],['d'],list(range(1,9)), [i])
         # data = sorted(sifter('optimize',optimizelist), key=lambda obj: (obj['K'],obj['M']))
-        data = sorted(sifter('optimize',optimizelist), key=lambda obj: obj['thres'][2])
+        data = sorted(sifter('optimize',optimizelist), key=lambda obj: obj['thres'][1])
         data = data[:3] + data[-3:]
         plot('optimize', data, 'as06 - optimize (cost = {0})'.format(i), 
-             'as06_Tc_Kx_R\*_Cd_Mx_cost{0}.png'.format(i), 75/100)
+             'as06_Tc_Kx_Cd_Mx_cost{0}.png'.format(i), 73/100)
