@@ -153,7 +153,7 @@ class Split:
 
 class Split_d(Split):
     
-    def __init__(self, G, d= 19, m = 1, topology = 'clique'):
+    def __init__(self, G, d= 500, m = 1, topology = 'clique'):
         self.G = G.copy()
         self.d = d
         self.m = m
@@ -190,7 +190,7 @@ class Split_d(Split):
         d_list = list(sorted(self.G.degree().items(), key=operator.itemgetter(1), reverse = True ))
         core = list(filter(lambda n : n[1] >= self.d , d_list)) 
         cost = self.loss_function(self.d, self.m)
-        print(core[1])
+        print(cost)
         for n in core : 
             k = int(n[1]/self.d) +1
             m = min(self.m ,k)
@@ -236,14 +236,27 @@ if __name__ == "__main__" :
     print ('load data')
 
     print(G.number_of_nodes())
+
     S = Split_d(G)
-    H = S.run()
-    print(H.number_of_nodes())
-    print(H.number_of_nodes())
-    # loss = S.loss_function(37,1)
-    # print(loss)
-    # d = S.optimal_d(8,2)
-    print(d)
+
+    cost = 8
+    m_list = [16]
+    for m in m_list:
+        d = S.optimal_d(m, cost)
+        t = 'clique'
+        print('m:{0}, c:{1} ,d:{2}'.format(m,cost,d))
+        S2 =  Split_d(G, d = d, m = m )
+        H = S2.run()
+        nx.write_gml(H, "../nonuniform/network/as06_T{0}_D{1}_M{2}_cost{3}.gml".format(t[0], d, m, cost ))
+        print('Split')
+        d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+        d_list = list(map(lambda v : v[0], d_list))
+        model = percolation(H, d_list)
+        after = model.run()
+        after = np.array(model.hist)
+        print('Percolation')
+        np.save( "../nonuniform/procedure/as06_T{0}_D{1}_M{2}_cost{3}.npy".format(t[0], d, m, cost ),after)
+
     # H = S.run()
 
 
