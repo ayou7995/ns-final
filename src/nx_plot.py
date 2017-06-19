@@ -191,7 +191,7 @@ if __name__ == '__main__':
         # data = sorted(sifter('basic',basiclist), key=lambda obj: obj['T'])
         # plot('basic', data, 'as06 - topology', 'as06_Tx_K4_R{0}_Cd_M1.png'.format(i), 4/5)
     ########################################################################################
-    # BASIC (K) : as06_Tc_Kx_Ry_Cd_M1 *****
+    # BASIC (K) : as06_Tc_Kx_Ry_Cd_M1
     # for i in [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]:
         # setBasicFilter(['as06'],['c'],[2,3,4,5,6],[i],['d'],[1])
         # data = sorted(sifter('basic',basiclist), key=lambda obj: obj['K'])
@@ -203,10 +203,10 @@ if __name__ == '__main__':
     # plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_Kx_R0.02_Cd_My.png', 4/5)
     ########################################################################################
     # BASIC (R) : as06_Tc_Ky_Rx_Cd_M1 *****
-    # for i in [2,3,4,5,6]:
-        # setBasicFilter(['as06'],['c'],[i],[0.005, 0.01, 0.02, 0.04, 0.08, 0.16],['d'],[1])
-        # data = sorted(sifter('basic',basiclist), key=lambda obj: obj['R'])
-        # plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_K{0}_Rx_Cd_M1.png'.format(i), 4/5)
+    for i in [2,3,4,5,6]:
+        setBasicFilter(['as06'],['c'],[i],[0.005, 0.01, 0.02, 0.04, 0.08, 0.16],['d'],[1])
+        data = sorted(sifter('basic',basiclist), key=lambda obj: obj['R'])
+        plot('basic', data, 'as06 - # of Split Nodes', 'as06_Tc_K{0}_Rx_Cd_M1.png'.format(i), 4/5)
     ########################################################################################
     # BASIC (Centrality) : as06_Tc_Ky_R0.02_Cx_M1
     # for i in range(2,7):
