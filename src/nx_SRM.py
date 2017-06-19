@@ -16,6 +16,12 @@ I = 1
 
 
 
+global w1 
+global w2 
+
+w1 = 0.001
+w2 = 0.00001
+
 def load_data():
     f = open(sys.argv[2], 'r')
     n_list = []
@@ -29,7 +35,7 @@ def load_data():
     return n_list
 
 class Split:
-    def __init__(self, G, k = 3 , alpha = 0.02 , m = 1, topology = 'clique', v_list =[]):
+    def __init__(self, G, k = 3, m = 1, alpha = 0.02, topology = 'clique', v_list =[]):
         self.G = G.copy()
         self.alpha = alpha
         self.k = k
@@ -38,31 +44,32 @@ class Split:
         self.v_list = v_list
     
 
-    def loss_function(self, K, M, alpha):
+    def loss_function(self, k, m, alpha):
         length = int(alpha*len(self.v_list))
         core = self.v_list[:length]
-        V = len(core) * (K-1)
-        Es = len(core) * K * (K-1) / 2
+        V = len(core) * (k-1)
+        Es = len(core) * k * (k-1) / 2
         Er = 0
         for n in core :
-            Er += len(self.G.neighbors(n[0])) * (M-1)
+            Er += len(self.G.neighbors(n[0])) * (m-1)
         E =  Es + Er
         #suppose loss = [0,1]
         loss = w1 * V + w2 * E
         return loss
     
-    def optimal_alpha(self, K, M, thres ):
+    def optimal_alpha(self, k, m, thres ):
         
         count = 1
-        alpha = 0.16
-        cost = self.loss_function(K, M, alpha )
-        while abs(cost - thres) > 0.01:
-            alpha -= np.sign(cost - thres) * np.power(0.5,count) * alpha 
-            count += 1
-            cost = self.loss_function(K, M, alpha )
-        return alpha
+        alpha = 0.32
 
-         
+        cost = self.loss_function(k, m, alpha )
+        while abs(cost - thres) > 0.001:
+            alpha -= np.sign(cost - thres) * np.power(0.5,count) * 0.32
+            count += 1
+            cost = self.loss_function(k, m, alpha )
+            if count >= 20:
+                break
+        return alpha   
          
     def build_clique(self, node, k):
         H = nx.Graph()
@@ -131,27 +138,64 @@ class Split:
         self.G.remove_node(node)
         self.G = nx.compose(self.G ,H) 
 
-    def nouniform(self, thres):
-        d_list = list(sorted(self.G.degree().items(), key=operator.itemgetter(1), reverse = True ))
-
-        core = list(filter(lambda n : n[1] >= thres , d_list)) 
-        print(core)
-        for n in core : 
-            self.join_graph(n[0], int(len(self.G.neighbors(n[0]))/thres) +1 ,1)
-        return self.G
-
-
     def run(self):
         length = int(self.alpha*len(self.v_list))
         core = self.v_list[:length]
+
+        cost = self.loss_function( self.k, self.m, self.alpha)
+        print(cost)
         if self.k < self.m :
             raise ValueError('The replica = {0} most smaller than spilt = {1}'.format(self.m, self.k))
         for n in core:
             self.join_graph(n[0], self.k , self.m)
-        return self.G
-        
 
-        
+        return self.G
+
+class Split_d(Split):
+    
+    def __init__(self, G, d= 19, m = 1, topology = 'clique'):
+        self.G = G.copy()
+        self.d = d
+        self.m = m
+        self.topology = topology
+
+    def loss_function(self, d, m):
+        d_list = list(sorted(self.G.degree().items(), key=operator.itemgetter(1), reverse = True ))
+        core = list(filter(lambda n : n[1] >= d , d_list)) 
+        V = 0
+        Er = 0
+        Es = 0
+        for n in core : 
+            k = int(n[1]/d) +1
+            V += (k-1)
+            Es += k*(k-1)/2
+            Er +=  n[1] * (min(m,k)-1)
+        E = Er + Es 
+        loss = w1 * V + w2 * E
+        return loss
+
+    def optimal_d(self, m, thres):
+        count = 1
+        d = 512
+        cost = self.loss_function(d, m)
+        while abs(cost - thres) > 0.001:
+            d += np.sign(cost - thres) * np.power(0.5,count) * 512 
+            count += 1
+            cost = self.loss_function(d, m)
+            if count > 9:
+                break
+        return d  
+
+    def run(self):
+        d_list = list(sorted(self.G.degree().items(), key=operator.itemgetter(1), reverse = True ))
+        core = list(filter(lambda n : n[1] >= self.d , d_list)) 
+        cost = self.loss_function(self.d, self.m)
+        print(core[1])
+        for n in core : 
+            k = int(n[1]/self.d) +1
+            m = min(self.m ,k)
+            self.join_graph(n[0], k, m)
+        return self.G
 
 class percolation:
     def __init__(self, G, n_list):
@@ -190,58 +234,38 @@ if __name__ == "__main__" :
     G = nx.read_gml(sys.argv[1])
     v_list = load_data()
     print ('load data')
-    # t0 = time.time() 
-    # u_list = G.nodes()
-    # np.random.shuffle(u_list)
 
-    # d_list = sorted(G.degree().items(), key=operator.itemgetter(1))
-    # d_list = list(map(lambda v : v[0], d_list))
-
-    # model = percolation(G, d_list)
-    # model.run()
-    
-    # origin = np.array(model.hist)
-
-    # np.save(sys.argv[2], origin)
-    # nx.write_gml(G, sys.argv[3])
-
-    # plt.figure(figsize=(12,9)) 
-    # plt.plot(np.linspace(0,1,len(before)), before/G.number_of_nodes(), label='before')
-    
-    k_list = [2, 3, 4, 5 ,6]
-    a_list = [0.005, 0.01, 0.02, 0.04, 0.08, 0.16]
-    
-    S = Split(G, v_list = v_list)
-    H = S.nouniform(300)
     print(G.number_of_nodes())
+    S = Split_d(G)
+    H = S.run()
     print(H.number_of_nodes())
+    print(H.number_of_nodes())
+    # loss = S.loss_function(37,1)
+    # print(loss)
+    # d = S.optimal_d(8,2)
+    print(d)
+    # H = S.run()
 
-    # m_list = [1, 2, 3, 4]
-    # k = 3
-    # alpha = 0.02
-    # m = 1
-    # t_list = [ 'clique', 'ring', 'star','tree']
+
+    # print(a)
+    # H, cost = S.run()
+    # print(cost)
+    # k_list = np.arange(8,9,2)
+    # cost = 8
     # for k in k_list:
-    #     for a in a_list:
-    #         for t in t_list :
-    #             for m in np.arange(1,k+1):
-    #                 print("as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format(t[0], k, a, 'd', m))
-    #                 S = Split(G, k = k, alpha = a, m = m, topology = t, v_list = v_list)
-    #                 H = S.run()
-    #                 nx.write_gml(H, "../network/as06_T{0}_K{1}_R{2}_C{3}_M{4}.gml".format(t[0], k, a, 'd', m))
-    #                 print('Split')
-    #                 # u_list = H.nodes()
-    #                 d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
-    #                 d_list = list(map(lambda v : v[0], d_list))
-    #                 model = percolation(H, d_list)
-    #                 after = model.run()
-    #                 after = np.array(model.hist)
-    #                 print('Percolation')
-    #                 np.save( "../procedure/as06_T{0}_K{1}_R{2}_C{3}_M{4}.npy".format(t[0], k, a, 'd', m), after)
-        # plt.plot(np.linspace(0,1,len(after)), after/H.number_of_nodes(), label='alpha = ' + str(k))
+    #     for m in np.arange(1,k+1):
+    #         a = S.optimal_alpha(k,m, cost)
+    #         t = 'clique'
+    #         print("k : {0}, m : {1}, a : {2:.3f}, cost : {3}".format(k ,m, a, cost))
+    #         S2 = Split(G, k = k, alpha = a, m = m, topology = t, v_list = v_list)
+    #         H = S2.run()
+    #         nx.write_gml(H, "../optimize/network/as06_T{0}_K{1}_R{2:.3f}_C{3}_M{4}_cost{5}.gml".format(t[0], k, a, 'd', m, cost))
+    #         print('Split')
+    #         d_list = sorted(H.degree().items(), key=operator.itemgetter(1))
+    #         d_list = list(map(lambda v : v[0], d_list))
+    #         model = percolation(H, d_list)
+    #         after = model.run()
+    #         after = np.array(model.hist)
+    #         print('Percolation')
+    #         np.save( "../optimize/procedure/as06_T{0}_K{1}_R{2:.3f}_C{3}_M{4}_cost{5}.npy".format(t[0], k, a, 'd', m, cost), after)
 
-    # plt.xlabel("Vertices remaining")
-    # plt.ylabel("Size of giant component")
-    # plt.legend(loc="upper left")
-    # plt.savefig('percolation_degree_alpha.png') 
-    # plt.clf()
